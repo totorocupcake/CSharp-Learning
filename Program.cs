@@ -415,13 +415,6 @@ Console.WriteLine(average);
 
 // Level 13 Taking a Number
 
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.CompilerServices;
-using System.Runtime.ExceptionServices;
-using System.Runtime.InteropServices;
-using System.Threading.Channels;
-using static System.Net.Mime.MediaTypeNames;
-
 int AskForNumber (string text)
 {
     Console.Write (text);
@@ -1254,7 +1247,8 @@ static class EndGameChecker
 */
 
 /* Level 25 Packing Inventory
- */
+ and Level 26 Labeling Inventory
+
 
 
 int totalItems = AskForNumber("Please enter max item count: ");
@@ -1274,6 +1268,7 @@ InventoryItem[] items = new InventoryItem[totalItems];
 
 while (pack.CurrentItemCount < totalItems)
 {
+    Console.WriteLine(pack);
     Console.WriteLine("Options to add to pack:");
     Console.WriteLine("1 - Arrow");
     Console.WriteLine("2 - Bow");
@@ -1342,36 +1337,45 @@ public class InventoryItem
 }
 public class Arrow: InventoryItem
 {
-    public Arrow() : base(0.1f, 0.05f)
-    { }
+    public Arrow() : base(0.1f, 0.05f) { }
+
+    public override string ToString() => "Arrow";
+
+
 }
 
 public class Bow : InventoryItem
 {
     public Bow() : base(1, 4)
     { }
+
+    public override string ToString() => "Bow";
 }
 
 public class Rope : InventoryItem
 {
     public Rope() : base(1, 1.5f)
     { }
+    public override string ToString() => "Rope";
 }
 
 public class Water : InventoryItem
 {
     public Water() : base(2, 3)
     { }
+    public override string ToString() => "Water";
 }
 public class Food : InventoryItem
 {
     public Food() : base(1, 0.5f)
     { }
+    public override string ToString() => "Food";
 }
 public class Sword : InventoryItem
 {
     public Sword() : base(5, 3)
     { }
+    public override string ToString() => "Sword";
 }
 
 public class Pack
@@ -1437,5 +1441,147 @@ public class Pack
         {
             return false;
         }
+    }
+
+    public override string ToString()
+    {
+        string? items = null;
+
+        foreach (InventoryItem item in Items)
+        {
+            if (item != null)
+            {
+                if (items == null)
+                    items = item.ToString();
+                else
+                    items += $" {item.ToString()}";
+            }
+        }
+
+        if (items == null)
+            items = "nothing";
+
+        return $"Pack containing {items}.";
+    }
+
+
+}
+*/
+
+/* Level 26 The Old Robot
+ */
+
+int commandNo = 1;
+RobotCommand?[] commands = new RobotCommand[3];
+
+while (commandNo<=3)
+{
+    Console.WriteLine("Command options:");
+    Console.WriteLine("1 - On Command");
+    Console.WriteLine("2 - Off Command");
+    Console.WriteLine("3 - North Command");
+    Console.WriteLine("4 - South Command");
+    Console.WriteLine("5 - West Command");
+    Console.WriteLine("6 - East Command");
+    Console.Write("Please enter your command: ");
+    int option = Convert.ToInt32(Console.ReadLine());
+
+    commands[commandNo-1] = option switch
+    {
+        1 => new OnCommand(),
+        2 => new OffCommand(),
+        3 => new NorthCommand(),
+        4 => new SouthCommand(),
+        5 => new WestCommand(),
+        6 => new EastCommand(),
+        _ => null
+    };
+    commandNo++;
+}
+
+Robot robot = new Robot(commands);
+robot.Run();
+
+
+
+public abstract class RobotCommand
+{
+    public abstract void Run(Robot robot);
+}
+
+public class  OnCommand : RobotCommand
+{
+    public override void Run(Robot robot)
+    {
+        robot.IsPowered = true;
+    }
+}
+
+public class OffCommand : RobotCommand
+{
+    public override void Run(Robot robot)
+    {
+        robot.IsPowered = false;
+    }
+}
+public class NorthCommand : RobotCommand
+{
+    public override void Run(Robot robot)
+    {
+        if (robot.IsPowered)
+            robot.Y++;
+        else
+            Console.WriteLine("Robot is not powered, cannot move North.");
+    }
+}
+
+public class SouthCommand : RobotCommand
+{
+    public override void Run(Robot robot)
+    {
+        if (robot.IsPowered)
+            robot.Y--;
+        else
+            Console.WriteLine("Robot is not powered, cannot move South.");
+    }
+}
+public class WestCommand : RobotCommand
+{
+    public override void Run(Robot robot)
+    {
+        if (robot.IsPowered)
+            robot.X--;
+        else
+            Console.WriteLine("Robot is not powered, cannot move West.");
+    }
+}
+public class EastCommand : RobotCommand
+{
+    public override void Run(Robot robot)
+    {
+        if (robot.IsPowered)
+            robot.X++;
+        else
+            Console.WriteLine("Robot is not powered, cannot move East.");
+    }
+}
+
+public class Robot
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+    public bool IsPowered { get; set; }
+    public RobotCommand?[] Commands { get; } = new RobotCommand?[3];
+
+    public Robot(RobotCommand?[] command)
+    { Commands = command; }
+    public void Run()
+    {
+        foreach (RobotCommand? command in Commands)
+        {
+            command?.Run(this);
+            Console.WriteLine($"[{X} {Y} {IsPowered}]");
+        }
+
     }
 }
