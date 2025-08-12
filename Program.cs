@@ -420,6 +420,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
+using static System.Net.Mime.MediaTypeNames;
 
 int AskForNumber (string text)
 {
@@ -1056,7 +1057,6 @@ public static class PasswordValidator
  */
 
 /* Tic-Tac-Toe
- */
 
 
 Game game = new Game ();
@@ -1248,5 +1248,194 @@ static class EndGameChecker
             }
         }
         return fullBoard;
+    }
+}
+
+*/
+
+/* Level 25 Packing Inventory
+ */
+
+
+int totalItems = AskForNumber("Please enter max item count: ");
+
+float maxWeight;
+float maxVolume;
+
+Console.Write("Please enter max weight: ");
+maxWeight = float.Parse(Console.ReadLine());
+
+Console.Write("Please enter max volume: ");
+maxVolume = float.Parse(Console.ReadLine());
+
+Pack pack = new Pack(totalItems, maxWeight, maxVolume);
+
+InventoryItem[] items = new InventoryItem[totalItems];
+
+while (pack.CurrentItemCount < totalItems)
+{
+    Console.WriteLine("Options to add to pack:");
+    Console.WriteLine("1 - Arrow");
+    Console.WriteLine("2 - Bow");
+    Console.WriteLine("3 - Rope");
+    Console.WriteLine("4 - Water");
+    Console.WriteLine("5 - Food");
+    Console.WriteLine("6 - Sword");
+    Console.WriteLine("7 - Stop, no more items to add");
+    Console.Write("Please enter your option: ");
+
+    int option = Convert.ToInt32(Console.ReadLine());
+    InventoryItem itemToAdd;
+
+    switch (option)
+    {
+        case 1:
+            itemToAdd = new Arrow();
+            break;
+        case 2:
+            itemToAdd = new Bow();
+            break;
+        case 3:
+            itemToAdd = new Rope();
+            break;
+        case 4:
+            itemToAdd = new Water();
+            break;
+        case 5:
+            itemToAdd = new Food();
+            break;
+        case 6:
+            itemToAdd = new Sword();
+            break;
+        case 7:
+            Console.WriteLine("No more items to add.");
+            return;
+        default:
+            Console.WriteLine("Invalid option, please try again.");
+            continue;
+    }
+
+    if (pack.Add(itemToAdd))
+    {
+        Console.WriteLine($"Added {itemToAdd.GetType().Name} to pack. Pack total item count: {pack.CurrentItemCount} / {pack.TotalItems}. Current total weight: {pack.CurrentWeight} / {pack.MaxWeight}. Current total volume: {pack.CurrentVolume} / {pack.MaxVolume}.");
+
+    }
+    else
+    {
+        Console.WriteLine($"Could not add {itemToAdd.GetType().Name} to pack, it exceeds weight or volume limits.");
+    }
+
+}
+
+Console.WriteLine($"Finished adding items to pack. Pack total item count: {pack.CurrentItemCount} / {pack.TotalItems}. Current total weight: {pack.CurrentWeight} / {pack.MaxWeight}. Current total volume: {pack.CurrentVolume} / {pack.MaxVolume}.");
+
+public class InventoryItem
+{
+    public float Weight { get; set; }
+    public float Volume { get; set; }
+
+    public InventoryItem(float weight, float volume)
+    {               
+        Weight = weight;
+        Volume = volume;
+    }   
+}
+public class Arrow: InventoryItem
+{
+    public Arrow() : base(0.1f, 0.05f)
+    { }
+}
+
+public class Bow : InventoryItem
+{
+    public Bow() : base(1, 4)
+    { }
+}
+
+public class Rope : InventoryItem
+{
+    public Rope() : base(1, 1.5f)
+    { }
+}
+
+public class Water : InventoryItem
+{
+    public Water() : base(2, 3)
+    { }
+}
+public class Food : InventoryItem
+{
+    public Food() : base(1, 0.5f)
+    { }
+}
+public class Sword : InventoryItem
+{
+    public Sword() : base(5, 3)
+    { }
+}
+
+public class Pack
+{
+    public InventoryItem[] Items { get; set; }
+
+    public int TotalItems { get; }
+    public float MaxWeight { get; }
+    public float MaxVolume { get; }
+
+    public float CurrentWeight
+    { 
+        get
+        {
+            float totalWeight = 0;
+
+            foreach (InventoryItem item in Items)
+            {
+                totalWeight += item?.Weight ?? 0;
+
+            }
+            return totalWeight;
+        }
+    }
+
+    public float CurrentVolume
+    {
+        get
+        {
+            float totalVolume= 0;
+
+            foreach (InventoryItem item in Items)
+            {
+                totalVolume+= item?.Volume ?? 0;
+
+            }
+            return totalVolume;
+        }
+    }
+
+    public int CurrentItemCount { get; set; } = 0;
+  
+
+
+
+    public Pack(int totalItems, float maxWeight, float maxVolume)
+    {
+        TotalItems = totalItems;
+        MaxWeight = maxWeight;
+        MaxVolume = maxVolume;
+        Items = new InventoryItem[totalItems];
+    }
+
+    public bool Add (InventoryItem item)
+    {
+        if ((item.Weight + this.CurrentWeight <= MaxWeight) && (item.Volume + this.CurrentVolume <= MaxVolume) && (CurrentItemCount < TotalItems))
+        {
+            Items[CurrentItemCount] = item;
+            CurrentItemCount++;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }
