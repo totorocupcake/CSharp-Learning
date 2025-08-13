@@ -1469,10 +1469,11 @@ public class Pack
 */
 
 /* Level 26 The Old Robot
- */
+and Level 27 Robotic Interface
+
 
 int commandNo = 1;
-RobotCommand?[] commands = new RobotCommand[3];
+IRobotCommand?[] commands = new IRobotCommand[3];
 
 while (commandNo<=3)
 {
@@ -1509,24 +1510,24 @@ public abstract class RobotCommand
     public abstract void Run(Robot robot);
 }
 
-public class  OnCommand : RobotCommand
+public class  OnCommand : IRobotCommand
 {
-    public override void Run(Robot robot)
+    public void Run(Robot robot)
     {
         robot.IsPowered = true;
     }
 }
 
-public class OffCommand : RobotCommand
+public class OffCommand : IRobotCommand
 {
-    public override void Run(Robot robot)
+    public void Run(Robot robot)
     {
         robot.IsPowered = false;
     }
 }
-public class NorthCommand : RobotCommand
+public class NorthCommand : IRobotCommand
 {
-    public override void Run(Robot robot)
+    public void Run(Robot robot)
     {
         if (robot.IsPowered)
             robot.Y++;
@@ -1535,9 +1536,9 @@ public class NorthCommand : RobotCommand
     }
 }
 
-public class SouthCommand : RobotCommand
+public class SouthCommand : IRobotCommand
 {
-    public override void Run(Robot robot)
+    public void Run(Robot robot)
     {
         if (robot.IsPowered)
             robot.Y--;
@@ -1545,9 +1546,9 @@ public class SouthCommand : RobotCommand
             Console.WriteLine("Robot is not powered, cannot move South.");
     }
 }
-public class WestCommand : RobotCommand
+public class WestCommand : IRobotCommand
 {
-    public override void Run(Robot robot)
+    public void Run(Robot robot)
     {
         if (robot.IsPowered)
             robot.X--;
@@ -1555,9 +1556,9 @@ public class WestCommand : RobotCommand
             Console.WriteLine("Robot is not powered, cannot move West.");
     }
 }
-public class EastCommand : RobotCommand
+public class EastCommand : IRobotCommand
 {
-    public override void Run(Robot robot)
+    public void Run(Robot robot)
     {
         if (robot.IsPowered)
             robot.X++;
@@ -1571,13 +1572,13 @@ public class Robot
     public int X { get; set; }
     public int Y { get; set; }
     public bool IsPowered { get; set; }
-    public RobotCommand?[] Commands { get; } = new RobotCommand?[3];
+    public IRobotCommand?[] Commands { get; } = new IRobotCommand?[3];
 
-    public Robot(RobotCommand?[] command)
+    public Robot(IRobotCommand?[] command)
     { Commands = command; }
     public void Run()
     {
-        foreach (RobotCommand? command in Commands)
+        foreach (IRobotCommand? command in Commands)
         {
             command?.Run(this);
             Console.WriteLine($"[{X} {Y} {IsPowered}]");
@@ -1585,3 +1586,53 @@ public class Robot
 
     }
 }
+ */
+/* Level 27 Robotic Interface
+ 
+public interface IRobotCommand
+{
+    void Run(Robot robot);
+}
+*/
+
+/* Level 28 Room Coordinates
+
+
+Coordinate coordinate1 = new Coordinate(2, 6);
+Coordinate coordinate2 = new Coordinate(2, 3);
+Console.WriteLine(coordinate1.IsAdjacent(coordinate2));
+public struct Coordinate
+{
+    public readonly int Row { get; }
+    public readonly int Column { get; }
+
+    public Coordinate(int row, int column)
+    {
+        Row = row;
+        Column = column;
+    }
+
+    public bool IsAdjacent(Coordinate otherCoordinate)
+    {
+        if (Row==otherCoordinate.Row && (Math.Abs(Column-otherCoordinate.Column) <=1)|| (Column == otherCoordinate.Column && (Math.Abs(Row - otherCoordinate.Row) <= 1)))
+            return true;
+        else
+            return false;
+    }
+}
+ */
+
+/* Level 29 Records
+ */
+
+Sword sword1 = new Sword (Material.Iron, GemStone.None,10,10);
+Console.WriteLine(sword1);
+Sword sword2 = sword1 with {Material = Material.Binarium };
+Console.WriteLine(sword2);
+Sword sword3 = sword1 with { GemStone = GemStone.Diamond,Length=5};
+Console.WriteLine(sword3);
+public record Sword (Material Material, GemStone GemStone, int Length, int Width);
+
+public enum Material { Wood, Bronze, Iron, Steel, Binarium}
+
+public enum GemStone { None, Emerald, Amber, Sapphire, Diamond, Bitstone }
