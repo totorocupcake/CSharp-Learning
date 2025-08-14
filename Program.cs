@@ -1693,6 +1693,7 @@ public class Game
     public InputHandler InputHandler { get; } 
     public LocationMessage LocationMessage { get; }
     public UserInputMessage UserInputMessage { get; }
+    public SystemMessage DashMessage { get; }
 
     private Position _currentPosition; 
     public Position CurrentPosition
@@ -1713,36 +1714,33 @@ public class Game
         _currentPosition = new Position();
         LocationMessage = new LocationMessage();
         UserInputMessage = new UserInputMessage();
+        DashMessage = new SystemMessage("--------------------------------------------------------------------------------");
     }
 
     public void Play()
     {
         while(true)
         {
-            Console.ForegroundColor = LocationMessage.Color;
-            Console.WriteLine(LocationMessage.Text);
+            GameObjConsoleWriter.WriteLine(DashMessage);
 
-            if (checkGameWin())
-            {
-                Console.WriteLine("The Fountain of Objects has been reactivated, and you have escaped with your life!");
-                Console.WriteLine("You win!");
-                break;
-            }
+            GameObjConsoleWriter.WriteLine(LocationMessage);
 
             if (Board.Room[CurrentPosition.Row, CurrentPosition.Column].Text is not null)
             {
-                Console.ForegroundColor = Board.Room[CurrentPosition.Row, CurrentPosition.Column].Color;
-                Console.WriteLine(Board.Room[CurrentPosition.Row, CurrentPosition.Column].Text);
+                GameObjConsoleWriter.WriteLine(Board.Room[CurrentPosition.Row, CurrentPosition.Column]);
             }
 
-            
+            if (checkGameWin())
+            {
+                SystemMessage winMessage = new SystemMessage("You win!");
+                GameObjConsoleWriter.WriteLine(winMessage);
+                break;
+            }
 
-            Console.ForegroundColor = UserInputMessage.Color;
-            Console.Write(UserInputMessage.Text);
+            GameObjConsoleWriter.Write(UserInputMessage);
+          
             string? input = Console.ReadLine();
             CurrentPosition = InputHandler.ProcessInput(CurrentPosition, input);
-
-            
         }
 
     }
@@ -1761,7 +1759,8 @@ public class Game
 public class InputHandler
 {
     private GameBoard _board;
-
+    private SystemMessage errorMessage = new SystemMessage("You cannot move outside the board.");
+    private SystemMessage invalidMessage = new SystemMessage("Invalid command. Please try again.");
     public InputHandler(GameBoard board)
     {
         _board = board;
@@ -1793,7 +1792,7 @@ public class InputHandler
         if (newCoordinate?.Row < 0 || newCoordinate?.Row >= 4 ||
             newCoordinate?.Column < 0 || newCoordinate?.Column >= 4)
         {
-            Console.WriteLine("You cannot move outside the board.");
+            GameObjConsoleWriter.WriteLine(errorMessage);
             return coordinate;
         }
 
@@ -1811,8 +1810,7 @@ public class InputHandler
         IRoom currentRoom = (IRoom) _board.Room[coordinate.Row, coordinate.Column];
 
         if(!currentRoom.processInput(input))
-            Console.WriteLine("Invalid command. Please try again.");
-
+            GameObjConsoleWriter.WriteLine(invalidMessage);
     }
        
 }
@@ -1850,7 +1848,7 @@ public class GameBoard
                         Room[i, j] = new EntranceRoom();
                         break;
                     case (0, 2):
-                        Room[i, j] = new FountainRoom();
+                        Room[i, j] = new FountainRoom((EntranceRoom)Room[0,0]);
                         break;
                     default:
                         Room[i,j]= new EmptyRoom();
@@ -1864,10 +1862,12 @@ public class GameBoard
 
 public class EntranceRoom : GameObject, IRoom
 {
+ 
     public EntranceRoom()
     {
         Text = "You see light in this room coming from outside the cavern. This is the entrance.";
         Color = ConsoleColor.Yellow;
+      
     }
 
     public bool processInput(string? input)
@@ -1879,6 +1879,7 @@ public class EntranceRoom : GameObject, IRoom
 public class FountainRoom : GameObject, IRoom
 {
     private bool _IsFountainActive;
+    private EntranceRoom _entranceRoom;
     public bool IsFountainActive
     {
         get => _IsFountainActive;
@@ -1888,10 +1889,11 @@ public class FountainRoom : GameObject, IRoom
             UpdateText();
         }
     }
-    public FountainRoom()
+    public FountainRoom(EntranceRoom entranceRoom)
     {
         IsFountainActive = false;
         Color = ConsoleColor.Blue;
+        _entranceRoom = entranceRoom;
     }
     public void UpdateText()
     {
@@ -1907,6 +1909,7 @@ public class FountainRoom : GameObject, IRoom
         {
             case "enable fountain":
                 IsFountainActive = true;
+                _entranceRoom.Text = "The Fountain of Objects has been reactivated, and you have escaped with your life!";
                 return true;
             default:
                 return false;
@@ -1957,5 +1960,29 @@ public class UserInputMessage : GameObject
     {
         Text = $"What do you want to do? ";
         Color = ConsoleColor.Cyan;
+    }
+}
+
+public class SystemMessage : GameObject
+{
+    public SystemMessage(string message)
+    {
+        Text = message;
+        Color = ConsoleColor.White;
+    }
+}
+
+public static class GameObjConsoleWriter
+{
+    public static void WriteLine(GameObject gameObject)
+    {
+        Console.ForegroundColor = gameObject.Color;
+        Console.WriteLine(gameObject.Text);
+    }
+
+    public static void Write(GameObject gameObject)
+    {
+        Console.ForegroundColor = gameObject.Color;
+        Console.Write(gameObject.Text);
     }
 }
