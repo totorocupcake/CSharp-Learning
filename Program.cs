@@ -415,6 +415,11 @@ Console.WriteLine(average);
 
 // Level 13 Taking a Number
 
+using System.ComponentModel.Design;
+using System.Net.Security;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
+
 int AskForNumber (string text)
 {
     Console.Write (text);
@@ -1623,7 +1628,7 @@ public struct Coordinate
  */
 
 /* Level 29 Records
- */
+
 
 Sword sword1 = new Sword (Material.Iron, GemStone.None,10,10);
 Console.WriteLine(sword1);
@@ -1636,3 +1641,321 @@ public record Sword (Material Material, GemStone GemStone, int Length, int Width
 public enum Material { Wood, Bronze, Iron, Steel, Binarium}
 
 public enum GemStone { None, Emerald, Amber, Sapphire, Diamond, Bitstone }
+ */
+
+/* Level 30 Colored Items
+
+
+ColoredItem<Sword> coloredSword = new ColoredItem<Sword>();
+ColoredItem<Bow> coloredBow = new ColoredItem<Bow>();
+ColoredItem<Axe> coloredAxe = new ColoredItem<Axe>();
+
+coloredSword.Display();
+coloredBow.Display();
+coloredAxe.Display();
+
+public class Sword { }
+public class Bow { }
+public class Axe { }
+
+public class ColoredItem<T> where T : new()
+{
+    public ConsoleColor Color { get; }
+    public T Item { get;} = new T();
+
+    public ColoredItem()
+    {
+        if (typeof(T) == typeof(Sword))
+            Color = ConsoleColor.Red;
+        else if (typeof(T) == typeof(Bow))
+            Color = ConsoleColor.Green;
+        else if (typeof(T) == typeof(Axe))
+            Color = ConsoleColor.Blue;
+    }
+
+    public void Display()
+    {
+        Console.ForegroundColor = Color;
+        Console.WriteLine(Item);
+    }
+}
+ */
+
+/* Level 31 The Fountain of Objects
+*/
+
+Game game = new Game();
+game.Play();
+
+public class Game
+{
+    public GameBoard Board { get; } 
+    public InputHandler InputHandler { get; } 
+    public LocationMessage LocationMessage { get; }
+    public UserInputMessage UserInputMessage { get; }
+
+    private Position _currentPosition; 
+    public Position CurrentPosition
+    {
+        get => _currentPosition;
+        set
+        {
+            _currentPosition = value;
+            LocationMessage.UpdateLocationMessage(_currentPosition);
+            
+        }
+    }
+
+    public Game()
+    {
+        Board = new GameBoard();
+        InputHandler = new InputHandler(Board);
+        _currentPosition = new Position();
+        LocationMessage = new LocationMessage();
+        UserInputMessage = new UserInputMessage();
+    }
+
+    public void Play()
+    {
+        while(true)
+        {
+            Console.ForegroundColor = LocationMessage.Color;
+            Console.WriteLine(LocationMessage.Text);
+
+            if (checkGameWin())
+            {
+                Console.WriteLine("The Fountain of Objects has been reactivated, and you have escaped with your life!");
+                Console.WriteLine("You win!");
+                break;
+            }
+
+            if (Board.Room[CurrentPosition.Row, CurrentPosition.Column].Text is not null)
+            {
+                Console.ForegroundColor = Board.Room[CurrentPosition.Row, CurrentPosition.Column].Color;
+                Console.WriteLine(Board.Room[CurrentPosition.Row, CurrentPosition.Column].Text);
+            }
+
+            
+
+            Console.ForegroundColor = UserInputMessage.Color;
+            Console.Write(UserInputMessage.Text);
+            string? input = Console.ReadLine();
+            CurrentPosition = InputHandler.ProcessInput(CurrentPosition, input);
+
+            
+        }
+
+    }
+
+    bool checkGameWin()
+    {
+        FountainRoom fountainRoom = (FountainRoom)Board.Room[0, 2];
+        if (CurrentPosition.Row==0 && CurrentPosition.Column == 0)
+            return fountainRoom.IsFountainActive;
+        return false;
+
+    }
+
+}
+
+public class InputHandler
+{
+    private GameBoard _board;
+
+    public InputHandler(GameBoard board)
+    {
+        _board = board;
+    }
+
+    public Position ProcessInput(Position coordinate, string? input)
+    {
+        Position? newCoordinate = new Position(coordinate.Row, coordinate.Column);
+
+        switch (input)
+        {
+            case "move north":
+                newCoordinate.Row = newCoordinate.Row - 1;
+                break;
+            case "move south":
+                newCoordinate.Row = newCoordinate.Row + 1;
+                break;
+            case "move east":
+                newCoordinate.Column = newCoordinate.Column + 1;
+                break;
+            case "move west":
+                newCoordinate.Column = newCoordinate.Column - 1;
+                break;
+            default:
+                newCoordinate = null;
+                break;
+        }
+
+        if (newCoordinate?.Row < 0 || newCoordinate?.Row >= 4 ||
+            newCoordinate?.Column < 0 || newCoordinate?.Column >= 4)
+        {
+            Console.WriteLine("You cannot move outside the board.");
+            return coordinate;
+        }
+
+        if (newCoordinate is null)
+        {
+            NonMovementInputHandler(coordinate, input);
+            return coordinate;
+        }
+        else
+            return (newCoordinate);
+    }
+
+    public void NonMovementInputHandler(Position coordinate, string? input)
+    {
+        IRoom currentRoom = (IRoom) _board.Room[coordinate.Row, coordinate.Column];
+
+        if(!currentRoom.processInput(input))
+            Console.WriteLine("Invalid command. Please try again.");
+
+    }
+       
+}
+
+public class Position
+{
+    public int Row { get; set; }
+    public int Column { get; set; }
+
+    public Position()
+    { Row = 0;
+        Column = 0;
+    }
+    public Position(int row, int column)
+    {
+        Row = row;
+        Column = column;
+    }
+
+}
+
+public class GameBoard
+{
+    public GameObject[,] Room { get; init; } = new GameObject[4,4];
+    
+    public GameBoard()
+    {
+        for (int i = 0; i< Room.GetLength(0); i++)
+        {
+            for (int j=0; j < Room.GetLength(1);j++)
+            {
+                switch ((i, j))
+                {
+                    case (0,0):
+                        Room[i, j] = new EntranceRoom();
+                        break;
+                    case (0, 2):
+                        Room[i, j] = new FountainRoom();
+                        break;
+                    default:
+                        Room[i,j]= new EmptyRoom();
+                        break;
+                }
+
+            }
+        }
+    }
+}
+
+public class EntranceRoom : GameObject, IRoom
+{
+    public EntranceRoom()
+    {
+        Text = "You see light in this room coming from outside the cavern. This is the entrance.";
+        Color = ConsoleColor.Yellow;
+    }
+
+    public bool processInput(string? input)
+    {
+        return false;
+    }
+}
+
+public class FountainRoom : GameObject, IRoom
+{
+    private bool _IsFountainActive;
+    public bool IsFountainActive
+    {
+        get => _IsFountainActive;
+        set
+        {
+            _IsFountainActive = value;
+            UpdateText();
+        }
+    }
+    public FountainRoom()
+    {
+        IsFountainActive = false;
+        Color = ConsoleColor.Blue;
+    }
+    public void UpdateText()
+    {
+        if (IsFountainActive)
+            Text = "You hear the rushing waters from the Fountain of Objects. It has been reactivated!";
+        else
+            Text = "You hear water dripping in this room.The Fountain of Objects is here!";
+    }
+
+    public bool processInput(string? input)
+    {
+        switch (input)
+        {
+            case "enable fountain":
+                IsFountainActive = true;
+                return true;
+            default:
+                return false;
+        }
+    }
+
+}
+
+public class EmptyRoom : GameObject, IRoom
+{
+    public bool processInput(string? input)
+    {
+        return false;
+    }
+
+}
+
+public interface IRoom
+{
+    public bool processInput(string? input);
+}
+
+
+public class GameObject
+{
+    public ConsoleColor Color { get; init; }
+    public string? Text { get; set; }
+}
+
+public class LocationMessage : GameObject
+{
+    public LocationMessage()
+    {
+        Color = ConsoleColor.Magenta;
+        UpdateLocationMessage(new Position(0, 0));
+    }
+
+    public void UpdateLocationMessage(Position coordinate)
+    {
+        Text = $"You are in the room at (Row={coordinate.Row}, Column={coordinate.Column}).";
+    }
+
+}
+
+public class UserInputMessage : GameObject
+{
+    public UserInputMessage()
+    {
+        Text = $"What do you want to do? ";
+        Color = ConsoleColor.Cyan;
+    }
+}
