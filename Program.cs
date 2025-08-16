@@ -419,6 +419,7 @@ using System.ComponentModel.Design;
 using System.Net.Security;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
+using System.Xml.Serialization;
 
 int AskForNumber (string text)
 {
@@ -448,8 +449,9 @@ void CountToTen (int number)
 CountToTen(10);
  */
 
-/* Level 14 Hunting the Manticore
- 
+/*
+Level 14 Hunting the Manticore
+
 
 int manticoreLoc = AskForNumberInRange("Player 1, how far away from the city do you want to station the Manticore? ", 0, 100);
 int cityHP = 15;
@@ -1681,12 +1683,13 @@ public class ColoredItem<T> where T : new()
 }
  */
 
-/* Level 31 The Fountain of Objects
-*/
+/*Level 31 The Fountain of Objects
+ *  and Small, Medium, or Large 
+ *  and Pits
+ *  and (Level 32) Time in the Cavern
 
 Game game = new Game();
 game.Play();
-
 public class Game
 {
     public GameBoard Board { get; } 
@@ -1707,8 +1710,10 @@ public class Game
         }
     }
 
+    public DateTime GameCreationTime { get;}
     public Game()
     {
+        GameCreationTime = DateTime.Now;
         Board = new GameBoard();
         InputHandler = new InputHandler(Board);
         _currentPosition = new Position();
@@ -1722,13 +1727,11 @@ public class Game
         while(true)
         {
             GameObjConsoleWriter.WriteLine(DashMessage);
-
             GameObjConsoleWriter.WriteLine(LocationMessage);
 
             if (Board.Room[CurrentPosition.Row, CurrentPosition.Column].Text is not null)
-            {
                 GameObjConsoleWriter.WriteLine(Board.Room[CurrentPosition.Row, CurrentPosition.Column]);
-            }
+            
 
             if (checkGameWin())
             {
@@ -1737,23 +1740,35 @@ public class Game
                 break;
             }
 
+            if (checkGameOver())
+                break;
+            
             GameObjConsoleWriter.Write(UserInputMessage);
           
             string? input = Console.ReadLine();
             CurrentPosition = InputHandler.ProcessInput(CurrentPosition, input);
         }
 
+        DateTime gameEndTime = DateTime.Now;
+        TimeSpan gameDuration = gameEndTime - GameCreationTime;
+
+        Console.WriteLine($"Game duration: {gameDuration.Hours} hours, {gameDuration.Minutes} minutes and {gameDuration.Seconds} seconds.");
     }
 
-    bool checkGameWin()
+    public bool checkGameWin()
     {
-        FountainRoom fountainRoom = (FountainRoom)Board.Room[0, 2];
+        FountainRoom fountainRoom = Board.FountainRoom!;
         if (CurrentPosition.Row==0 && CurrentPosition.Column == 0)
             return fountainRoom.IsFountainActive;
         return false;
-
     }
 
+    public bool checkGameOver()
+    {
+        if (Board.Room[CurrentPosition.Row, CurrentPosition.Column] is PitRoom)
+            return true;
+        return false;
+    }
 }
 
 public class InputHandler
@@ -1789,8 +1804,8 @@ public class InputHandler
                 break;
         }
 
-        if (newCoordinate?.Row < 0 || newCoordinate?.Row >= 4 ||
-            newCoordinate?.Column < 0 || newCoordinate?.Column >= 4)
+        if (newCoordinate?.Row < 0 || newCoordinate?.Row >= _board.Room.GetLength(0) ||
+            newCoordinate?.Column < 0 || newCoordinate?.Column >= _board.Room.GetLength(1))
         {
             GameObjConsoleWriter.WriteLine(errorMessage);
             return coordinate;
@@ -1834,35 +1849,99 @@ public class Position
 
 public class GameBoard
 {
-    public GameObject[,] Room { get; init; } = new GameObject[4,4];
-    
+    public GameObject[,] Room { get; init; }
+    Random random = new Random();
+    public FountainRoom? FountainRoom { get; init; }
     public GameBoard()
     {
-        for (int i = 0; i< Room.GetLength(0); i++)
-        {
-            for (int j=0; j < Room.GetLength(1);j++)
-            {
-                switch ((i, j))
-                {
-                    case (0,0):
-                        Room[i, j] = new EntranceRoom();
-                        break;
-                    case (0, 2):
-                        Room[i, j] = new FountainRoom((EntranceRoom)Room[0,0]);
-                        break;
-                    default:
-                        Room[i,j]= new EmptyRoom();
-                        break;
-                }
+        string? input;
 
-            }
+        while (true) { 
+        Console.Write("Please pick small, medium or large game: ");
+        input = Console.ReadLine();
+            if (input!="small" && input != "medium" && input != "large")
+                Console.WriteLine("Invalid input, please try again.");
+            else
+                break;
         }
+
+        int size = (int)((gameSize)Enum.Parse(typeof(gameSize), input, ignoreCase: true));
+        
+        Room = new GameObject[size, size];
+     
+        Room[0,0] = new EntranceRoom();
+
+        (int randomRow, int randomCol) = GenerateRandomCoordinates(size);
+        Room[randomRow, randomCol] = new FountainRoom((EntranceRoom)Room[0, 0]);
+        FountainRoom = (FountainRoom)Room[randomRow, randomCol];
+        
+            for (int i = 0; i < Room.GetLength(0); i++)
+            {
+                for (int j = 0; j < Room.GetLength(1); j++)
+                {
+                    if (Room[i, j] is null)
+                        Room[i, j] = new EmptyRoom();
+                }
+            }
+        GeneratePits(size);
+    }
+
+
+    public (int, int) GenerateRandomCoordinates(int size)
+    {
+        int randomRow = 0;
+        int randomCol = 0;
+
+        while (Room[randomRow, randomCol] != null && (Room[randomRow, randomCol].GetType() != typeof(EmptyRoom)) )
+        {
+            randomRow = random.Next(0, size);
+            randomCol = random.Next(0, size);
+        }
+        return (randomRow, randomCol);
+    }
+
+    public void GeneratePits(int size)
+    {
+        int pitCount = size switch
+        {
+            4 => 1,
+            6 => 2,
+            8 => 4,
+            _ => 0
+        };
+
+        for (int i = 0; i < pitCount; i++)
+        {
+            (int randomRow, int randomCol) = GenerateRandomCoordinates(size);
+            Room[randomRow, randomCol] = new PitRoom(Room);
+
+            if (randomRow - 1 >= 0)
+                AddPitMessage(randomRow - 1, randomCol);
+            if (randomCol - 1 >= 0)
+                AddPitMessage(randomRow, randomCol - 1);
+            if (randomRow + 1 < Room.GetLength(0))
+                AddPitMessage(randomRow + 1, randomCol);
+            if (randomCol + 1 < Room.GetLength(1))
+                AddPitMessage(randomRow, randomCol + 1);
+            if (randomRow - 1 >= 0 && randomCol - 1 >= 0)
+                AddPitMessage(randomRow - 1, randomCol - 1);
+            if (randomRow - 1 >= 0 && randomCol + 1 < Room.GetLength(1))
+                AddPitMessage(randomRow - 1, randomCol + 1);
+            if (randomRow + 1 < Room.GetLength(0) && randomCol - 1 >= 0)
+                AddPitMessage(randomRow + 1, randomCol - 1);
+            if (randomRow + 1 < Room.GetLength(0) && randomCol + 1 < Room.GetLength(1))
+                AddPitMessage(randomRow + 1, randomCol + 1);
+        }
+
+        void AddPitMessage(int row, int col)
+        { if (Room[row, col].Text is not null)
+              Room[row, col].Text += "\n";
+          Room[row, col].Text += "You feel a draft. There is a pit in a nearby room."; }
+
     }
 }
-
 public class EntranceRoom : GameObject, IRoom
 {
- 
     public EntranceRoom()
     {
         Text = "You see light in this room coming from outside the cavern. This is the entrance.";
@@ -1918,6 +1997,19 @@ public class FountainRoom : GameObject, IRoom
 
 }
 
+public class  PitRoom : GameObject, IRoom
+{
+    public PitRoom(GameObject[,] Room)
+    {
+        Color = ConsoleColor.DarkRed;
+        Text = "You fell into a pit and died. Game over.";
+    }
+    public bool processInput(string? input)
+    {
+        return false;
+    }
+
+}
 public class EmptyRoom : GameObject, IRoom
 {
     public bool processInput(string? input)
@@ -1935,8 +2027,8 @@ public interface IRoom
 
 public class GameObject
 {
-    public ConsoleColor Color { get; init; }
-    public string? Text { get; set; }
+    public ConsoleColor Color { get; init; } = ConsoleColor.Gray;
+    public string? Text { get; set; } 
 }
 
 public class LocationMessage : GameObject
@@ -1985,4 +2077,209 @@ public static class GameObjConsoleWriter
         Console.ForegroundColor = gameObject.Color;
         Console.Write(gameObject.Text);
     }
+}
+
+
+enum gameSize
+{
+    Small=4,
+    Medium=6,
+    Large=8
+}
+*/
+
+/* Level 32 The Robot Pilot
+ 
+
+Random random = new Random();
+
+int manticoreLoc = random.Next(101);
+int cityHP = 15;
+int manticoreHP = 10;
+int turn = 1;
+int dmg;
+
+while (manticoreHP > 0 && cityHP > 0)
+{
+    Console.WriteLine("-----------------------------------");
+    Console.ForegroundColor = ConsoleColor.Blue;
+    Console.WriteLine($"STATUS: Round: {turn} City: {cityHP}/15 Manticore: {manticoreHP}/10");
+
+    if (turn % 3 == 0 && turn % 5 == 0)
+        dmg = 10;
+    else if (turn % 3 == 0 || turn % 5 == 0)
+        dmg = 3;
+    else
+        dmg = 1;
+    Console.ForegroundColor = ConsoleColor.DarkMagenta;
+    Console.WriteLine($"The cannon is expected to deal {dmg} damage this round.");
+
+    int shootLoc = AskForNumber("Enter desired cannon range: ");
+
+    if (shootLoc < manticoreLoc)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("That round FELL SHORT of the target.");
+    }
+    else if (shootLoc > manticoreLoc)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("That round OVERSHOT the target.");
+    }
+    else
+    {
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("That round was a DIRECT HIT!");
+        manticoreHP -= dmg;
+    }
+
+    if (manticoreHP > 0)
+        cityHP--;
+
+    turn++;
+}
+
+if (manticoreHP <= 0)
+{
+    Console.ForegroundColor = ConsoleColor.DarkGreen;
+    Console.WriteLine("The Manticore has been destroyed! The city of Consolas has been saved!");
+}
+else
+{
+    Console.ForegroundColor = ConsoleColor.DarkRed;
+    Console.WriteLine("The city of Consolas has been destroyed!");
+}
+*/
+
+/* Level 32 List of Commands
+ */
+
+int commandNo = 1;
+List<IRobotCommand> commands = new List<IRobotCommand>();
+IRobotCommand? newCommand;
+Robot robot = new Robot();
+string? input="";
+
+while (input !="stop")
+{
+    Console.WriteLine("Command options:");
+    Console.WriteLine("1 - On Command");
+    Console.WriteLine("2 - Off Command");
+    Console.WriteLine("3 - North Command");
+    Console.WriteLine("4 - South Command");
+    Console.WriteLine("5 - West Command");
+    Console.WriteLine("6 - East Command");
+    Console.Write("Please enter your command: ");
+
+    input = Console.ReadLine();
+    int option;
+
+    if (int.TryParse(input, out option))
+    {
+
+        newCommand = option switch
+        {
+            1 => new OnCommand(),
+            2 => new OffCommand(),
+            3 => new NorthCommand(),
+            4 => new SouthCommand(),
+            5 => new WestCommand(),
+            6 => new EastCommand(),
+            _ => null
+        !
+        };
+
+        robot.AddCommand(newCommand);
+    }
+}
+
+robot.Run();
+
+
+public class OnCommand : IRobotCommand
+{
+    public void Run(Robot robot)
+    {
+        robot.IsPowered = true;
+    }
+}
+
+public class OffCommand : IRobotCommand
+{
+    public void Run(Robot robot)
+    {
+        robot.IsPowered = false;
+    }
+}
+public class NorthCommand : IRobotCommand
+{
+    public void Run(Robot robot)
+    {
+        if (robot.IsPowered)
+            robot.Y++;
+        else
+            Console.WriteLine("Robot is not powered, cannot move North.");
+    }
+}
+
+public class SouthCommand : IRobotCommand
+{
+    public void Run(Robot robot)
+    {
+        if (robot.IsPowered)
+            robot.Y--;
+        else
+            Console.WriteLine("Robot is not powered, cannot move South.");
+    }
+}
+public class WestCommand : IRobotCommand
+{
+    public void Run(Robot robot)
+    {
+        if (robot.IsPowered)
+            robot.X--;
+        else
+            Console.WriteLine("Robot is not powered, cannot move West.");
+    }
+}
+public class EastCommand : IRobotCommand
+{
+    public void Run(Robot robot)
+    {
+        if (robot.IsPowered)
+            robot.X++;
+        else
+            Console.WriteLine("Robot is not powered, cannot move East.");
+    }
+}
+
+public class Robot
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+    public bool IsPowered { get; set; }
+    public List<IRobotCommand> Commands { get; } = new List<IRobotCommand>();
+
+    public void Run()
+    {
+        foreach (IRobotCommand command in Commands)
+        {
+            command?.Run(this);
+            Console.WriteLine($"[{X} {Y} {IsPowered}]");
+        }
+
+    }
+
+    public void AddCommand(IRobotCommand? command)
+    {
+        if (command != null)
+            Commands.Add(command);
+        else
+            Console.WriteLine("Invalid command, please try again.");
+    }
+}
+
+public interface IRobotCommand
+{
+    void Run(Robot robot);
 }
