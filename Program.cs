@@ -413,7 +413,7 @@ float average = (float)total / array.Length;
 Console.WriteLine(average);
  */
 
-// Level 13 Taking a Number
+/* Level 13 Taking a Number
 
 using System.ComponentModel.Design;
 using System.Net.Security;
@@ -2152,7 +2152,7 @@ else
 */
 
 /* Level 32 List of Commands
- */
+ 
 
 int commandNo = 1;
 List<IRobotCommand> commands = new List<IRobotCommand>();
@@ -2283,3 +2283,29 @@ public interface IRobotCommand
 {
     void Run(Robot robot);
 }
+*/
+
+/* Level 33 The Feud
+ *  and Dueling Traditions
+
+using IField;
+using McDroid;
+
+namespace IField
+{
+    
+
+public class Program
+{
+    static void Main(string[] args)
+    {
+        Sheep sheep = new Sheep();
+        Cow cow = new Cow();
+        IField.Pig pig1 = new IField.Pig();
+        McDroid.Pig pig2 = new McDroid.Pig();
+        Console.WriteLine($"Ran successfully.");
+    }
+}
+
+}
+*/
