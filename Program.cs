@@ -2309,3 +2309,160 @@ public class Program
 
 }
 */
+
+/* Level 34 Safer Number Crunching
+ 
+
+GetInput<int>();
+
+T GetInput<T>() where T : IParsable<T>
+
+    {
+    string? input = "";
+    T? result;
+
+    while (!T.TryParse(input,null, out result))
+    {
+        Console.Write("Please enter a value: ");
+        input = Console.ReadLine();
+    }
+    Console.WriteLine($"You entered: {result}");
+    return result;
+}
+*/
+
+/* Level 34 Better Random
+
+
+public static class RandomExtensions
+{
+    public static double NextDouble(this Random random, int max)
+    {
+        return random.NextDouble() * max;
+    }
+
+    public static string NextString(this Random random, params string[] input)
+    {
+        int index = random.Next(input.Length);
+        return input[index];
+    }
+
+    public static bool NextBool(this Random random,double probability=0.5)
+    {
+        double randomValue = random.NextDouble();
+
+        if (randomValue > probability)
+            return false;
+        return true;
+
+    }
+}
+ */
+
+/* Level 35 Exepti's Game
+
+CookieException game = new CookieException();
+game.Play();
+
+public class CookieException
+{
+
+    public void Play()
+    {
+        Random random = new Random();
+
+        int raisin = random.Next(10);
+        List<int> pickedNumbers = new List<int>();
+
+        while ( true)
+        {
+            Console.Write("Please enter a number between 0 and 9: ");
+            string? input = Console.ReadLine();
+            if (int.TryParse(input, out int number))
+            {
+                if (pickedNumbers.Contains(number))
+                {
+                    Console.WriteLine("You already picked that number, try again.");
+                    continue;
+                }
+
+                pickedNumbers.Add(number);
+
+                try
+                {
+                    if (number == raisin) throw new Exception("You found the raisin cookie!");
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("You found the raisin cookie!");
+                    break;
+                }
+            }    
+        }
+    }
+}
+ */
+
+/* Level 36 The Sieve
+ */
+
+string? input = "";
+
+Console.WriteLine("Filters:");
+Console.WriteLine("1 - Even Number Filter");
+Console.WriteLine("2 - Positive Number Filter");
+Console.WriteLine("3 - Multiples of 10 Number Filter");
+Console.Write("Please enter filter option: ");
+input = Console.ReadLine();
+
+while (input!= "1" && input!="2" && input!="3")
+{
+    Console.WriteLine("Invalid input, please try again.");
+    Console.Write("Please enter filter option: ");
+    input = Console.ReadLine();
+}    
+
+Func<int,bool> operation = input switch
+{
+    "1" => IsEven,
+    "2" => IsPositive,
+    "3" => IsMultipleofTen,
+    _ => IsEven
+};
+
+Sieve sieve = new Sieve(operation);
+
+while (input!= "stop")
+{
+    Console.Write("Please enter number or stop: ");
+    input = Console.ReadLine();
+    if (int.TryParse(input, out int number))
+    {
+        if (sieve.IsGood(number))
+            Console.WriteLine($"{number} passes the filter.");
+        else
+            Console.WriteLine($"{number} does not pass the filter.");
+    }
+    else if (input != "stop")
+        break;
+}
+
+
+bool IsEven(int number)=> number % 2 == 0;
+bool IsPositive(int number) => number > 0;
+bool IsMultipleofTen(int number) => number % 10 == 0;
+
+public class Sieve
+{
+    private Func<int,bool> _operation;
+    public Sieve(Func<int,bool> operation)
+    {
+        _operation = operation;
+    }
+
+    public bool IsGood(int number)
+    { 
+        return _operation(number);
+    }
+
+}
