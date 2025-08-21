@@ -2404,7 +2404,7 @@ public class CookieException
  */
 
 /* Level 36 The Sieve
- */
+
 
 string? input = "";
 
@@ -2455,6 +2455,7 @@ bool IsMultipleofTen(int number) => number % 10 == 0;
 public class Sieve
 {
     private Func<int,bool> _operation;
+
     public Sieve(Func<int,bool> operation)
     {
         _operation = operation;
@@ -2463,6 +2464,324 @@ public class Sieve
     public bool IsGood(int number)
     { 
         return _operation(number);
+       
     }
 
+}
+ */
+
+/* Charberry Trees
+
+CharberryTree tree = new CharberryTree();
+Notifier notifier = new Notifier(tree);
+Harvester harvester = new Harvester(tree);
+
+while (true)
+    tree.MaybeGrow();
+public class CharberryTree
+{
+    private Random _random = new Random();
+    public bool Ripe { get; set; }
+
+    public event Action Ripened = () => { };
+    
+    public void MaybeGrow()
+    {
+        // Only a tiny chance of ripening each time, but we try a lot!
+        if (_random.NextDouble() < 0.00000001 && !Ripe)
+        {
+            Ripe = true;
+            Ripened?.Invoke();
+        }
+    }
+}
+
+
+public class  Notifier
+{
+    public Notifier(CharberryTree tree)
+    {
+        tree.Ripened += OnRipe;
+    }
+
+    public void OnRipe()
+    {   
+        Console.WriteLine("A charberry has ripened!");
+    }
+    
+}
+
+public class Harvester
+{
+    private CharberryTree _tree;
+    public Harvester(CharberryTree tree)
+    {
+        tree.Ripened += OnRipe;
+        this._tree = tree;
+    }
+
+
+    public void OnRipe()
+    {
+        _tree.Ripe = false;
+        Console.WriteLine("A charberry has been harvested!");
+    }
+}
+ */
+
+/* Level 38 The Lambda Sieve
+
+string? input = "";
+
+Console.WriteLine("Filters:");
+Console.WriteLine("1 - Even Number Filter");
+Console.WriteLine("2 - Positive Number Filter");
+Console.WriteLine("3 - Multiples of 10 Number Filter");
+Console.Write("Please enter filter option: ");
+input = Console.ReadLine();
+
+while (input != "1" && input != "2" && input != "3")
+{
+    Console.WriteLine("Invalid input, please try again.");
+    Console.Write("Please enter filter option: ");
+    input = Console.ReadLine();
+}
+
+Sieve sieve = new Sieve(Convert.ToInt32(input));
+
+while (input != "stop")
+{
+    Console.Write("Please enter number or stop: ");
+    input = Console.ReadLine();
+    if (int.TryParse(input, out int number))
+    {
+        if (sieve.IsGood(number))
+            Console.WriteLine($"{number} passes the filter.");
+        else
+            Console.WriteLine($"{number} does not pass the filter.");
+    }
+    else if (input == "stop")
+        break;
+}
+
+
+public class Sieve
+{
+    private Func<int, bool> _operation;
+
+    public Sieve(int number)
+    {
+        _operation = number switch
+        {
+            1 => n => n % 2 == 0,
+            2 => n => n > 0,
+            3 => n=> n %10==0,
+            _=> n => n % 2 == 0
+        };
+    }
+
+    public bool IsGood(int number)
+    {
+        return _operation(number);
+
+    }
+}
+ */
+
+/* The Long Game
+
+Console.Write("Please enter your name: ");
+string? name = Console.ReadLine();
+int score = 0;
+
+if (File.Exists($"{name}.txt"))
+{ 
+    score = Convert.ToInt32(File.ReadAllText($"{name}.txt"));
+    Console.WriteLine($"Welcome back {name}. Your score starts from: {score}.");
+}
+
+Console.WriteLine("Please enter characters to increase your score. Press Enter to stop.");
+
+while (Console.ReadKey().Key != ConsoleKey.Enter)
+    Console.WriteLine("Your score is: " + ++score);
+
+File.WriteAllText($"{name}.txt", score.ToString());
+ */
+
+/* Level 40 The Potion Masters of Pattren
+
+Potion potion = Potion.Water;
+
+while (true)
+{
+    Console.WriteLine($"You current have potion: {potion}");
+
+    Console.WriteLine("Ingredients available:");
+
+    int number = 1;
+
+    foreach (Ingredient ingredient in Enum.GetValues(typeof(Ingredient)))
+    {
+        Console.WriteLine($"{number} - {ingredient}");
+        number++;
+    }
+
+    Console.Write("Enter chosen ingredient: ");
+    string? input = Console.ReadLine();
+
+    potion = (potion, input) switch
+    {
+        (Potion.Water, "1") => Potion.Elixir,
+        (Potion.Water, _) => Potion.Ruined,
+        (Potion.Elixir, "2") => Potion.Poison,
+        (Potion.Elixir, "3") => Potion.Flying,
+        (Potion.Elixir, "4") => Potion.Invisibility,
+        (Potion.Elixir, "5") => Potion.NightSight,
+        (Potion.NightSight, "4") => Potion.CloudyBrew,
+        (Potion.Invisibility, "5") => Potion.CloudyBrew,
+        (Potion.CloudyBrew, "1") => Potion.Wraith,
+        _ => potion
+    };
+
+    if (potion == Potion.Ruined)
+    {
+        Console.WriteLine("You ruined the potion and need to start over again!");
+        potion = Potion.Water;
+        continue;
+    }    
+
+    Console.Write($"Do you wish to continue (Y) or complete the potion (N)? ");
+    input = Console.ReadLine();
+
+    if (input == "N")
+        break;
+}
+Console.WriteLine($"Final potion: {potion}");
+
+public enum Potion
+{ Water,Elixir, Poison, Flying, Invisibility, NightSight, CloudyBrew, Wraith, Ruined 
+}
+
+public enum Ingredient
+{
+    Stardust,SnakeVenom, DragonBreath, ShadowGlass, EyeshineGem
+}
+ */
+
+/* Level 41 Navigating Operand City
+ * and Indexing Operand City
+ * and Converting Directions to Offsets
+
+BlockCoordinate newCoordinate = new BlockCoordinate(0,0);
+BlockOffset offset = new BlockOffset(1, 2);
+Direction direction = Direction.East;
+
+Console.WriteLine($"New coordinate after adding offset: {newCoordinate + offset}");
+Console.WriteLine($"New coordinate after adding direction: {newCoordinate + direction}");
+Console.WriteLine($"Coordinate using index: {(newCoordinate + offset)[0]} and {(newCoordinate + offset)[1]}");
+offset = direction;
+Console.WriteLine($"New Blockoffset from direction: {offset}");
+
+public record BlockCoordinate(int Row, int Column)
+{
+    public static BlockCoordinate operator +(BlockCoordinate blockCoordinate, BlockOffset blockOffset)
+        => new BlockCoordinate(blockCoordinate.Row + blockOffset.RowOffset, blockCoordinate.Column + blockOffset.ColumnOffset);
+
+    public static BlockCoordinate operator +(BlockOffset blockOffset, BlockCoordinate blockCoordinate)
+        => blockCoordinate + blockOffset;
+
+    public static BlockCoordinate operator +(BlockCoordinate blockCoordinate, Direction direction)
+    {
+        return direction switch
+        {
+            Direction.North when blockCoordinate.Row > 0 => new BlockCoordinate(blockCoordinate.Row - 1, blockCoordinate.Column),
+            Direction.South => new BlockCoordinate(blockCoordinate.Row + 1, blockCoordinate.Column),
+            Direction.East => new BlockCoordinate(blockCoordinate.Row, blockCoordinate.Column + 1),
+            Direction.West when blockCoordinate.Column > 0 => new BlockCoordinate(blockCoordinate.Row, blockCoordinate.Column - 1),
+            _ => blockCoordinate
+        };
+    }
+    public static BlockCoordinate operator +(Direction direction, BlockCoordinate blockCoordinate)
+        => blockCoordinate + direction;
+
+    public int this[int index]
+    {
+        get
+        {
+            if (index == 0) return Row;
+            else return Column;
+        }
+    }
+}
+public record BlockOffset(int RowOffset, int ColumnOffset)
+{
+    public static implicit operator BlockOffset(Direction direction) =>
+    direction switch
+    {
+        Direction.North => new BlockOffset(-1, 0),
+        Direction.South => new BlockOffset(1, 0),
+        Direction.East => new BlockOffset(0, 1),
+        Direction.West => new BlockOffset(0, -1),
+        _ => new BlockOffset(0, 0)
+    };
+
+}
+public enum Direction { North, East, South, West }
+*/
+
+/* Level 42 The Three Lenses
+ */
+
+int[] input = { 5,43,23,4,6,7,8,2,4};
+Console.WriteLine("Filter:");
+foreach (int number in Filter(input))
+{
+    Console.Write(number);
+    Console.Write(" ");
+}
+Console.WriteLine();
+Console.WriteLine("Filter by KeyWord:");
+foreach (int number in FilterKeywordBased(input))
+{
+    Console.Write(number);
+    Console.Write(" ");
+}
+Console.WriteLine();
+Console.WriteLine("Filter by Method:");
+
+foreach (int number in FilterMethodBased(input))
+{
+    Console.Write(number);
+    Console.Write(" ");
+}
+
+IEnumerable<int> Filter (int[] input)
+{
+    List<int> output = new List<int>();
+
+    foreach (int number in input)
+    {
+        if (number % 2 == 0)
+            output.Add(number * 2);
+    }
+    output.Sort();
+    return output;
+}
+
+IEnumerable<int> FilterKeywordBased(int[] input)
+{
+    IEnumerable<int> output = from number in input
+                       where number % 2 == 0
+                       orderby number
+                       select number * 2;
+    return output;
+
+}
+
+IEnumerable<int> FilterMethodBased(int[] input)
+{
+    IEnumerable<int> output = input.Where(n => n % 2 == 0)
+                                    .OrderBy(n => n)
+                                    .Select(n => n * 2);
+    return output;
 }
