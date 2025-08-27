@@ -2730,7 +2730,6 @@ public enum Direction { North, East, South, West }
 */
 
 /* Level 42 The Three Lenses
- */
 
 int[] input = { 5,43,23,4,6,7,8,2,4};
 Console.WriteLine("Filter:");
@@ -2785,3 +2784,199 @@ IEnumerable<int> FilterMethodBased(int[] input)
                                     .Select(n => n * 2);
     return output;
 }
+ */
+/* Level 43 The Repeating Stream
+
+RecentNumbers recentNumbers = new RecentNumbers();
+
+Thread thread= new Thread(GenerateNumbers);
+
+thread.Start(recentNumbers);
+
+while (true)
+{
+    if (Console.ReadKey().Key == ConsoleKey.Enter)
+    {
+        Console.WriteLine($"X: {recentNumbers.X}, Y: {recentNumbers.Y}");
+        if (recentNumbers.X == recentNumbers.Y)
+            Console.WriteLine("You correctly identified the repeat!");
+        else
+            Console.WriteLine("You did not correctly identify the repeat.");
+    }
+}
+void GenerateNumbers(object? recentNumbers)
+{
+    Random random = new Random();
+    int randomNumber;
+    if (recentNumbers is RecentNumbers number)
+    {
+        while (true)
+        {
+            randomNumber = random.Next(10);
+            number.UpdateValues(number.Y, randomNumber);
+            Console.WriteLine(randomNumber);
+            Thread.Sleep(100);
+        }
+    }
+    else
+        return;
+}
+
+public record RecentNumbers
+{
+    private readonly object _lock = new object();
+  
+    private int _x;
+    private int _y;
+    public int X
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _x;
+            }
+        }
+    }
+    public int Y
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _y;
+            }
+        }
+    }
+
+    public void UpdateValues(int x, int y)
+    {
+        lock (_lock)
+        {
+            _x = x;
+            _y = y;
+        }
+    }
+ 
+}
+ */
+
+/* Level 44 Asynchronous Random Words
+ * and Many Random Words
+
+using System.Text;
+
+
+while(true)
+{
+    GenerateWord();
+}
+
+async Task GenerateWord() {
+    Console.WriteLine("Please enter a word: ");
+    string? word = Console.ReadLine();
+    DateTime start = DateTime.Now;
+
+    if (word is null)
+        word = "";
+    int result = await RandomlyRecreateAsync(word);
+    TimeSpan duration = DateTime.Now - start;
+
+    Console.WriteLine($"Recreating the word {word} took {result} attempts. It took {duration.TotalSeconds} seconds to complete.");
+}
+
+int RandomlyRecreate(string word)
+{
+    Random random = new Random();
+    
+    int attempts = 0;
+
+    while (true)
+    {
+        StringBuilder newWord = new StringBuilder();
+
+        for (int i = 0; i < word.Length; i++)
+        {
+            char randomChar = (char)('a' + random.Next(26));
+            newWord.Append(randomChar);
+        }
+        attempts++;
+        if (newWord.ToString() == word.ToLower())
+        {
+            return attempts;
+        }
+    }
+}
+
+Task<int> RandomlyRecreateAsync(string word)
+{
+       return Task.Run(() => RandomlyRecreate(word));
+}
+ */
+
+/* Level 45 Uniter of Adds
+
+Console.WriteLine(Add(1, 2));
+Console.WriteLine(Add(1.2d, 45.43d));
+Console.WriteLine(Add("hello", " hi"));
+Console.WriteLine(Add(DateTime.Now, TimeSpan.FromDays(1)));
+dynamic Add(dynamic a, dynamic b)
+{
+    return a + b;
+}
+ */
+
+/* Level 45 The Robot Factory
+
+using System.Dynamic;
+
+dynamic robot; 
+int idNo = 1; 
+string? input;
+int result;
+
+while (true)
+{
+    robot = new ExpandoObject();
+    Console.WriteLine($"You are producing robot #{idNo}");
+    robot.ID = idNo;
+    idNo++;
+    Console.Write("Do you want to name this robot? (yes/no): ");
+    input = Console.ReadLine();
+    if (input == "yes")
+    {
+        Console.Write("Please enter the name: ");
+        input = Console.ReadLine();
+        robot.Name = input;
+    }
+    Console.Write("Does this robot have a specific size? (yes/no): ");
+    input = Console.ReadLine();
+    if (input == "yes")
+    {
+        Console.Write("What is its height? ");
+        input = Console.ReadLine();
+        if (int.TryParse(input,out result))
+        {
+            robot.Height = result;
+        }
+        Console.Write("What is its width? ");
+        input = Console.ReadLine();
+        if (int.TryParse(input, out result))
+        {
+            robot.Width = result;
+        }
+    }
+    Console.Write("Does this robot need to have a specific color? (yes/no): ");
+    input = Console.ReadLine();
+    if (input == "yes")
+    {
+        Console.Write("What color? ");
+        input = Console.ReadLine();
+        robot.Color = input;
+    }
+
+    foreach (KeyValuePair<string, object> property in (IDictionary<string, object>)robot)
+        Console.WriteLine($"{property.Key}: {property.Value}");
+
+}
+ */
